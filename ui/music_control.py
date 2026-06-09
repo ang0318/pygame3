@@ -1,9 +1,8 @@
 """
 右上角音乐控制组件
-支持：背景音乐开关、音量调节（左右键）
-素材约定（缺失则用文字代替）：
-  assets/icon_music_on.png   18×18 px
-  assets/icon_music_off.png  18×18 px
+- 图标全部纯代码绘制，不依赖任何图片文件
+- 支持 M 键切换静音，, / . 键调节音量
+- 点击控件也可切换静音
 """
 from __future__ import annotations
 import pygame
@@ -11,55 +10,69 @@ from engine.settings     import Settings
 from engine.asset_loader import AssetLoader
 
 
-class MusicControl:
-    """
-    贴在屏幕右上角的迷你音乐控制条。
-    调用方负责在每帧 draw()，并把事件传给 handle_event()。
-    """
+def _draw_music_icon(surface: pygame.Surface,
+                     cx: int, cy: int, r: int,
+                     color: tuple, muted: bool) -> None:
+    """在 surface 上绘制音符/静音图标（纯代码）。"""
+    if not muted:
+        # 音符：圆头 + 竖线 + 横线
+        pygame.draw.circle(surface, color, (cx - r // 2, cy + r // 3), r // 3)
+        pygame.draw.line(surface, color,
+                         (cx - r // 6, cy + r // 3),
+                         (cx - r // 6, cy - r // 2), 2)
+        pygame.draw.line(surface, color,
+                         (cx - r // 6, cy - r // 2),
+                         (cx + r // 2, cy - r), 2)
+        pygame.draw.circle(surface, color, (cx + r // 2, cy - r + r // 3), r // 3)
+    else:
+        # 静音：喇叭 + 叉
+        pts = [(cx - r, cy - r // 3),
+               (cx - r // 3, cy - r // 3),
+               (cx, cy - r),
+               (cx, cy + r),
+               (cx - r // 3, cy + r // 3),
+               (cx - r, cy + r // 3)]
+        pygame.draw.polygon(surface, color, pts)
+        pygame.draw.line(surface, (243, 139, 168),
+                         (cx + r // 3, cy - r // 2),
+                         (cx + r, cy + r // 2), 2)
+        pygame.draw.line(surface, (243, 139, 168),
+                         (cx + r, cy - r // 2),
+                         (cx + r // 3, cy + r // 2), 2)
 
-    W, H = 120, 28
+
+class MusicControl:
+    """右上角迷你音乐控制条（纯代码绘制，不依赖图片）。"""
+
+    W, H   = 130, 28
     MARGIN = 8
 
     def __init__(self, settings: Settings, assets: AssetLoader) -> None:
         self.cfg    = settings
-        self.assets = assets
         self.muted  = False
-        self.volume = 0.5      # 0.0 ~ 1.0
+        self.volume = 0.5
 
-        self._font  = assets.font(settings.FONT_NAME, 14)
-        self.rect   = pygame.Rect(
+        self._font = assets.font(settings.FONT_NAME, 14)
+        self.rect  = pygame.Rect(
             settings.SCREEN_W - self.W - self.MARGIN,
-            self.MARGIN + 36,   # 顶栏下方
+            self.MARGIN + 36,
             self.W, self.H,
         )
 
-        # 图标（缺失时用文字）
-        icon_size = (18, 18)
-        self._icon_on  = assets.safe_image(
-            "assets/icon_music_on.png",  icon_size, (166, 227, 161))
-        self._icon_off = assets.safe_image(
-            "assets/icon_music_off.png", icon_size, (243, 139, 168))
-
     # ── 事件 ─────────────────────────────────────────────────────────────
     def handle_event(self, event: pygame.event.Event) -> bool:
-        """返回 True 表示事件已被消费。"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
-                self._toggle_mute()
-                return True
-            if event.key == pygame.K_COMMA:   # < 减音量
-                self._set_volume(self.volume - 0.1)
-                return True
-            if event.key == pygame.K_PERIOD:  # > 加音量
-                self._set_volume(self.volume + 0.1)
-                return True
+                self._toggle_mute(); return True
+            if event.key == pygame.K_COMMA:
+                self._set_volume(self.volume - 0.1); return True
+            if event.key == pygame.K_PERIOD:
+                self._set_volume(self.volume + 0.1); return True
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.rect.collidepoint(event.pos):
-                self._toggle_mute()
-                return True
+                self._toggle_mute(); return True
         return False
 
-    # ── 控制 ─────────────────────────────────────────────────────────────
     def _toggle_mute(self) -> None:
         self.muted = not self.muted
         pygame.mixer.music.set_volume(0.0 if self.muted else self.volume)
@@ -73,19 +86,18 @@ class MusicControl:
     def draw(self, screen: pygame.Surface) -> None:
         # 背景
         bg = pygame.Surface((self.W, self.H), pygame.SRCALPHA)
-        bg.fill((0, 0, 0, 140))
+        bg.fill((0, 0, 0, 150))
         screen.blit(bg, self.rect.topleft)
 
-        x, y = self.rect.x + 4, self.rect.y + 5
-        # 图标
-        icon = self._icon_off if self.muted else self._icon_on
-        screen.blit(icon, (x, y))
+        cx = self.rect.x + 14
+        cy = self.rect.centery
+        icon_color = (243, 139, 168) if self.muted else (166, 227, 161)
+        _draw_music_icon(screen, cx, cy, 7, icon_color, self.muted)
 
-        # 文字
-        label = "静音" if self.muted else f"音量 {int(self.volume * 100)}%"
+        label = "静音" if self.muted else f"{int(self.volume * 100)}%"
         txt   = self._font.render(label, True, self.cfg.COLOR_TEXT)
-        screen.blit(txt, (x + 22, y + 1))
+        screen.blit(txt, (self.rect.x + 28, cy - txt.get_height() // 2))
 
-        # 提示
-        hint = self._font.render("[M]", True, (100, 100, 130))
-        screen.blit(hint, (self.rect.right - hint.get_width() - 4, y + 1))
+        hint = self._font.render("[M] [,] [.]", True, (80, 80, 110))
+        screen.blit(hint, (self.rect.right - hint.get_width() - 4,
+                           cy - hint.get_height() // 2))

@@ -39,7 +39,8 @@ _DIALOGUES: dict[str, list[dict]] = {
 class Level1Scene(BaseLevelScene):
     def __init__(self, manager: SceneManager) -> None:
         super().__init__(manager)
-        self._level_asset_id = 1   # 专属素材目录：assets/levels/level1/
+        self._level_asset_id = 1          # 专属素材目录：assets/levels/level1/
+        self._bg_image_key   = "bg_level1.png"   # 背景图（缺失自动降级纯色）
         self.hud.level_name  = "关卡 1 - 知识入门"
 
     def _build_level(self) -> None:

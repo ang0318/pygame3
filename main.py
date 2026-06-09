@@ -20,14 +20,24 @@ from ui.music_control      import MusicControl
 from scenes.menu_scene     import MenuScene
 
 
-def _try_play_music(path: str, volume: float = 0.5) -> None:
-    """尝试播放背景音乐，文件不存在时静默跳过。"""
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.set_volume(volume)
-        pygame.mixer.music.play(-1)   # -1 = 无限循环
-    except Exception:
-        pass   # 没有音乐文件时不报错
+def _try_play_music(base: str = "assets/bgm",
+                    volume: float = 0.5) -> None:
+    """
+    自动探测 mp3 / ogg / wav，找到第一个存在的文件播放。
+    base: 不含扩展名的路径，如 "assets/bgm"
+    """
+    from pathlib import Path
+    for ext in (".mp3", ".ogg", ".wav"):
+        path = base + ext
+        if Path(path).exists():
+            try:
+                pygame.mixer.music.load(path)
+                pygame.mixer.music.set_volume(volume)
+                pygame.mixer.music.play(-1)
+                return
+            except Exception:
+                pass
+    # 全部失败时静默，不报错
 
 
 def main() -> None:
@@ -43,8 +53,8 @@ def main() -> None:
     assets = AssetLoader()
     mgr    = SceneManager(cfg, bus, assets)
 
-    # ── 背景音乐（素材缺失则静默） ────────────────────────────────────────
-    _try_play_music("assets/bgm.ogg")
+    # ── 背景音乐（自动探测 mp3/ogg/wav，缺失则静默） ──────────────────────
+    _try_play_music("assets/bgm")
     music_ui = MusicControl(cfg, assets)
 
     # ── 关卡注册表（自动扫描 scenes/level*.py） ───────────────────────────

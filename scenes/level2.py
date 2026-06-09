@@ -72,7 +72,8 @@ class Gem(pygame.sprite.Sprite):
 class Level2Scene(BaseLevelScene):
     def __init__(self, manager: SceneManager) -> None:
         super().__init__(manager)
-        self._level_asset_id = 2   # 专属素材目录：assets/levels/level2/
+        self._level_asset_id = 2              # 专属素材目录：assets/levels/level2/
+        self._bg_image_key   = "bg_level2.png"       # 背景图（缺失自动降级纯色）
         self.hud.level_name  = "关卡 2 - 跳跃挑战"
         self.gems:            pygame.sprite.Group = pygame.sprite.Group()
         self._gem_count       = 0

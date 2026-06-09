@@ -157,7 +157,19 @@ class BaseLevelScene(BaseScene):
 
     # ── 渲染 ──────────────────────────────────────────────────────────────
     def draw(self, screen: pygame.Surface) -> None:
-        screen.fill(self.settings.COLOR_BG)
+        # 背景：优先使用关卡专属或通用背景图，缺失则纯色填充
+        bg_key = getattr(self, "_bg_image_key", None)
+        if bg_key:
+            bg = self.assets.safe_image(
+                bg_key,
+                (self.settings.SCREEN_W, self.settings.SCREEN_H),
+                self.settings.COLOR_BG,
+            )
+            bg = pygame.transform.scale(
+                bg, (self.settings.SCREEN_W, self.settings.SCREEN_H))
+            screen.blit(bg, (0, 0))
+        else:
+            screen.fill(self.settings.COLOR_BG)
         cx = int(self._cam_x)
 
         # 平台

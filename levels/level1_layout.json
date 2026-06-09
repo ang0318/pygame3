@@ -4,8 +4,8 @@
     "world_w": 1600
   },
   "player_spawn": {
-    "x": 382,
-    "y": 401
+    "x": 46,
+    "y": 468
   },
   "platforms": [
     {
@@ -13,20 +13,21 @@
       "y": 500,
       "w": 1600,
       "h": 40,
-      "sprite_key": "default"
+      "sprite_key": "default",
+      "hidden": true
     },
     {
       "x": 298,
       "y": 410,
-      "w": 200,
-      "h": 20,
+      "w": 388,
+      "h": 86,
       "sprite_key": "default"
     },
     {
       "x": 600,
       "y": 320,
-      "w": 200,
-      "h": 20,
+      "w": 33,
+      "h": 96,
       "sprite_key": "default"
     },
     {
@@ -46,8 +47,8 @@
   ],
   "npcs": [
     {
-      "x": 250,
-      "y": 500,
+      "x": 555,
+      "y": 409,
       "name": "向导阿明",
       "sprite_key": "guide",
       "dialogue_key": "guide"

@@ -35,8 +35,23 @@ class MenuScene(BaseScene):
         self._bg_y = (self._bg_y + 20 * dt) % self.settings.SCREEN_H
 
     def draw(self, screen: pygame.Surface) -> None:
-        screen.fill(self.settings.COLOR_BG)
-        self._draw_grid(screen)
+        # 背景图（assets/bg_menu.png 或任意支持格式，缺失则降级到网格动效）
+        bg = self.assets.safe_image(
+            "bg_menu.png",
+            (self.settings.SCREEN_W, self.settings.SCREEN_H),
+            self.settings.COLOR_BG,
+        )
+        # 判断是否真的加载到了图片（非色块）
+        # safe_image 缺失时返回纯色 Surface，尺寸与 fallback_size 相同
+        # 通过检查是否存在文件来决定渲染方式
+        from pathlib import Path
+        if Path("assets/bg_menu.png").exists():
+            bg = pygame.transform.scale(
+                bg, (self.settings.SCREEN_W, self.settings.SCREEN_H))
+            screen.blit(bg, (0, 0))
+        else:
+            screen.fill(self.settings.COLOR_BG)
+            self._draw_grid(screen)
 
         # 标题
         title = self._font_big.render(self.settings.TITLE, True, self.settings.COLOR_GOLD)
