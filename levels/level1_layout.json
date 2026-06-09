@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "name": "关卡 1 - 知识入门",
+    "world_w": 1600
+  },
+  "player_spawn": {
+    "x": 382,
+    "y": 401
+  },
+  "platforms": [
+    {
+      "x": 0,
+      "y": 500,
+      "w": 1600,
+      "h": 40,
+      "sprite_key": "default"
+    },
+    {
+      "x": 298,
+      "y": 410,
+      "w": 200,
+      "h": 20,
+      "sprite_key": "default"
+    },
+    {
+      "x": 600,
+      "y": 320,
+      "w": 200,
+      "h": 20,
+      "sprite_key": "default"
+    },
+    {
+      "x": 900,
+      "y": 380,
+      "w": 300,
+      "h": 20,
+      "sprite_key": "default"
+    },
+    {
+      "x": 1200,
+      "y": 280,
+      "w": 300,
+      "h": 20,
+      "sprite_key": "default"
+    }
+  ],
+  "npcs": [
+    {
+      "x": 250,
+      "y": 500,
+      "name": "向导阿明",
+      "sprite_key": "guide",
+      "dialogue_key": "guide"
+    },
+    {
+      "x": 1300,
+      "y": 280,
+      "name": "守门者",
+      "sprite_key": "gatekeeper",
+      "dialogue_key": "gatekeeper"
+    }
+  ],
+  "gems": []
+}

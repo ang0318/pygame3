@@ -1,7 +1,17 @@
-"""NPC 实体 —— 带对话气泡、问答状态机"""
+"""
+NPC 实体 —— 带对话气泡、问答状态机
+素材约定（缺失则自动用色块代替）：
+  assets/npc_{name}_idle_0.png   NPC 静止帧，name 为创建时传入的 sprite_key
+  assets/npc_{name}_talk_0.png   NPC 说话帧（可选，缺失复用 idle）
+建议尺寸 32×48 px。
+"""
 from __future__ import annotations
 import pygame
-from engine.settings import Settings
+from engine.settings     import Settings
+from engine.asset_loader import AssetLoader
+
+NPC_W = 32
+NPC_H = 48
 
 
 class NPC(pygame.sprite.Sprite):
@@ -9,53 +19,78 @@ class NPC(pygame.sprite.Sprite):
     NPC 携带一组问答数据，玩家靠近并按 E 时触发对话。
     对话数据格式（列表，按顺序播放）：
         [
-          {"text": "你好！", "choices": None},                         # 纯叙述
-          {"text": "2+2=?",  "choices": ["3","4","5"], "answer": 1},   # 问答，answer 为正确选项索引
+          {"text": "你好！", "choices": None},
+          {"text": "2+2=?", "choices": ["3","4","5"], "answer": 1},
         ]
     """
 
-    INTERACT_DIST = 80   # 触发距离（像素）
+    INTERACT_DIST = 80
 
     def __init__(self, x: float, y: float,
                  dialogue: list[dict],
                  settings: Settings,
-                 name: str = "NPC") -> None:
+                 name: str = "NPC",
+                 sprite_key: str = "default",
+                 assets: AssetLoader | None = None) -> None:
         super().__init__()
-        self.cfg      = settings
-        self.dialogue = dialogue
-        self.name     = name
+        self.cfg        = settings
+        self.dialogue   = dialogue
+        self.name       = name
+        self._size      = (NPC_W, NPC_H)
 
-        # 外观
-        self.image = pygame.Surface((32, 48), pygame.SRCALPHA)
-        self._draw_shape()
+        # ── 加载帧 ────────────────────────────────────────────────────────
+        if assets:
+            fb = settings.COLOR_NPC
+            idle_frames = assets.frames(
+                f"assets/npc_{sprite_key}_idle_{{}}.png", 1, self._size, fb)
+            talk_frames = assets.frames(
+                f"assets/npc_{sprite_key}_talk_{{}}.png", 1, self._size, fb)
+        else:
+            idle_frames = [self._make_fallback()]
+            talk_frames = [self._make_fallback()]
+
+        self._idle_frames = [pygame.transform.scale(f, self._size) for f in idle_frames]
+        self._talk_frames = [pygame.transform.scale(f, self._size) for f in talk_frames]
+
+        self._anim_timer = 0.0
+        self._anim_fps   = 4.0
+        self._frame_idx  = 0
+
+        self.image = self._idle_frames[0]
         self.rect  = self.image.get_rect(midbottom=(x, y))
 
         # 对话状态
         self.talking   = False
-        self.step      = 0       # 当前对话步骤
-        self.finished  = False   # 全部对话已完成
-
-        # 悬浮提示计时（闪烁）
+        self.step      = 0
+        self.finished  = False
         self._hint_timer = 0.0
 
-    # ── 外观 ──────────────────────────────────────────────────────────────
-    def _draw_shape(self) -> None:
-        self.image.fill((0, 0, 0, 0))
-        c = self.cfg.COLOR_NPC
-        pygame.draw.rect(self.image, c, (8, 16, 16, 26), border_radius=4)
-        pygame.draw.circle(self.image, c, (16, 12), 10)
-        # 叹号标记
-        pygame.draw.circle(self.image, self.cfg.COLOR_GOLD, (16, 2), 3)
+    # ── 占位色块 ──────────────────────────────────────────────────────────
+    def _make_fallback(self) -> pygame.Surface:
+        surf = pygame.Surface(self._size, pygame.SRCALPHA)
+        surf.fill(self.cfg.COLOR_NPC)
+        c2 = (30, 30, 46)
+        pygame.draw.circle(surf, c2, (NPC_W // 2, 10), 8)
+        pygame.draw.rect(surf, c2, (NPC_W//2-5, 18, 10, 18), 2)
+        # 感叹号
+        pygame.draw.circle(surf, self.cfg.COLOR_GOLD, (NPC_W // 2, 2), 3)
+        return surf
 
-    # ── 更新 ──────────────────────────────────────────────────────────────
+    # ── 更新 ─────────────────────────────────────────────────────────────
     def update(self, dt: float) -> None:  # type: ignore[override]
         self._hint_timer += dt
+        frames = self._talk_frames if self.talking else self._idle_frames
+        if len(frames) > 1:
+            self._anim_timer += dt
+            if self._anim_timer >= 1.0 / self._anim_fps:
+                self._anim_timer -= 1.0 / self._anim_fps
+                self._frame_idx   = (self._frame_idx + 1) % len(frames)
+        self.image = frames[self._frame_idx % len(frames)]
 
-    # ── 渲染 ──────────────────────────────────────────────────────────────
+    # ── 渲染提示 ──────────────────────────────────────────────────────────
     def draw_hint(self, screen: pygame.Surface,
                   font: pygame.font.Font,
                   player_rect: pygame.Rect) -> None:
-        """玩家足够近时显示 [E] 互动提示。"""
         if self.talking or self.finished:
             return
         dist = abs(self.rect.centerx - player_rect.centerx)
@@ -67,26 +102,23 @@ class NPC(pygame.sprite.Sprite):
                      self.rect.top - 24)
             screen.blit(surf, pos)
 
-    # ── 互动 ──────────────────────────────────────────────────────────────
+    # ── 互动 ─────────────────────────────────────────────────────────────
     def try_interact(self, player_rect: pygame.Rect) -> bool:
-        """返回 True 表示成功开启对话。"""
         if self.finished:
             return False
         dist = abs(self.rect.centerx - player_rect.centerx)
         if dist < self.INTERACT_DIST and not self.talking:
-            self.talking = True
-            self.step    = 0
+            self.talking    = True
+            self.step       = 0
+            self._frame_idx = 0
             return True
         return False
 
     @property
     def current_dialogue(self) -> dict | None:
-        if self.step < len(self.dialogue):
-            return self.dialogue[self.step]
-        return None
+        return self.dialogue[self.step] if self.step < len(self.dialogue) else None
 
     def advance(self) -> bool:
-        """推进到下一句，返回 False 表示对话已全部结束。"""
         self.step += 1
         if self.step >= len(self.dialogue):
             self.talking  = False
