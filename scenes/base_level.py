@@ -54,6 +54,9 @@ class BaseLevelScene(BaseScene):
 
     # ── 生命周期 ──────────────────────────────────────────────────────────
     def on_enter(self) -> None:
+        # 切换素材上下文（子类可在 _build_level 前覆盖 _level_asset_id）
+        self.assets.set_level(getattr(self, "_level_asset_id", None))
+
         # 每次进入都重建（支持重玩）
         self.platforms.empty()
         self.npcs.clear()

@@ -27,8 +27,7 @@ class MenuScene(BaseScene):
 
     def _confirm(self) -> None:
         if self._sel == 0:
-            from scenes.level1 import Level1Scene
-            self.manager.replace(Level1Scene(self.manager))
+            self.bus.emit("start_game")   # main.py 监听，通过 LevelRegistry 启动第一关
         else:
             self.bus.emit("quit")
 

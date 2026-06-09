@@ -2,6 +2,7 @@
 关卡 2 —— 从 levels/level2_layout.json 加载所有物体位置
 新玩法：收集宝石 + 问答双重考验
 过关条件：收集 >= 3 颗宝石 且 Boss 所有问答正确
+过关后：bus.emit("game_over", {"win": True, "score": N})
 """
 from __future__ import annotations
 import json
@@ -71,52 +72,43 @@ class Gem(pygame.sprite.Sprite):
 class Level2Scene(BaseLevelScene):
     def __init__(self, manager: SceneManager) -> None:
         super().__init__(manager)
+        self._level_asset_id = 2   # 专属素材目录：assets/levels/level2/
         self.hud.level_name  = "关卡 2 - 跳跃挑战"
         self.gems:            pygame.sprite.Group = pygame.sprite.Group()
         self._gem_count       = 0
         self._gem_required    = 3
         self._boss: NPC | None = None
 
-    # ── 构建关卡（从 JSON 加载） ───────────────────────────────────────────
+    # ── 构建关卡 ─────────────────────────────────────────────────────────
     def _build_level(self) -> None:
         loader = LevelLoader(
             "levels/level2_layout.json",
-            self.settings,
-            self.assets,
-            _DIALOGUES,
+            self.settings, self.assets, _DIALOGUES,
         )
         loader.build(self.platforms, self.npcs)
         self.player   = loader.player
         self._world_w = loader.world_w
+        self._boss    = self.npcs[-1] if self.npcs else None
 
-        # Boss NPC 是 npcs 列表最后一个（按 JSON 顺序）
-        self._boss = self.npcs[-1] if self.npcs else None
-
-        # 从 JSON 加载宝石坐标
+        # 宝石从 JSON 加载
         layout_path = Path("levels/level2_layout.json")
         if layout_path.exists():
             with open(layout_path, encoding="utf-8") as f:
                 data = json.load(f)
             for g in data.get("gems", []):
-                self.gems.add(Gem(g["x"], g["y"],
-                                  assets=self.assets))
+                self.gems.add(Gem(g["x"], g["y"], assets=self.assets))
 
     # ── on_enter ─────────────────────────────────────────────────────────
     def on_enter(self) -> None:
         self.gems       = pygame.sprite.Group()
         self._gem_count = 0
         super().on_enter()
-        self.bus.subscribe("level_complete", self._on_win)
-
-    def on_exit(self) -> None:
-        self.bus.unsubscribe("level_complete", self._on_win)
 
     # ── 更新 ─────────────────────────────────────────────────────────────
     def update(self, dt: float) -> None:
         self.gems.update(dt)
         if self.player:
-            hit = pygame.sprite.spritecollide(self.player, self.gems, True)
-            for _ in hit:
+            for _ in pygame.sprite.spritecollide(self.player, self.gems, True):
                 self._gem_count += 1
                 self.hud.score  += 50
         super().update(dt)
@@ -142,18 +134,12 @@ class Level2Scene(BaseLevelScene):
         cx = int(self._cam_x)
         for gem in self.gems:
             screen.blit(gem.image, (gem.rect.x - cx, gem.rect.y))
-
         font    = self.assets.font(self.settings.FONT_NAME, 18)
         gem_txt = font.render(
             f"宝石 {self._gem_count} / {self._gem_required}",
             True, self.settings.COLOR_GOLD)
         screen.blit(gem_txt, (12, self.settings.SCREEN_H - 30))
 
-    # ── 过关 ─────────────────────────────────────────────────────────────
+    # ── 过关 —— 只发事件，不关心下一步是谁 ──────────────────────────────
     def _on_all_npc_done(self) -> None:
-        self.bus.emit("level_complete", {"next": "win"})
-
-    def _on_win(self, data: dict) -> None:
-        if data and data.get("next") == "win":
-            from scenes.win_scene import WinScene
-            self.manager.replace(WinScene(self.manager, self.hud.score))
+        self.bus.emit("game_over", {"win": True, "score": self.hud.score})

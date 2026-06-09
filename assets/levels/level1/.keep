@@ -1,0 +1,2 @@
+将关卡1专属素材放在此目录，会自动覆盖 assets/ 下的同名通用素材。
+查找顺序：assets/levels/level1/ → assets/ → 色块兜底
