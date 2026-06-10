@@ -90,17 +90,23 @@ class NPC(pygame.sprite.Sprite):
     # ── 渲染提示 ──────────────────────────────────────────────────────────
     def draw_hint(self, screen: pygame.Surface,
                   font: pygame.font.Font,
-                  player_rect: pygame.Rect) -> None:
+                  player_rect: pygame.Rect,
+                  cam_x: int = 0) -> None:
+        """
+        player_rect: 世界坐标（不减 cam_x）
+        cam_x: 当前摄像机偏移，用于将世界坐标转换为屏幕坐标渲染
+        """
         if self.talking or self.finished:
             return
+        # 用世界坐标比较距离，避免摄像机偏移导致误判
         dist = abs(self.rect.centerx - player_rect.centerx)
         if dist < self.INTERACT_DIST:
-            alpha = 255 if int(self._hint_timer * 3) % 2 == 0 else 140
-            surf  = font.render("[E] 对话", True, self.cfg.COLOR_GOLD)
+            alpha    = 255 if int(self._hint_timer * 3) % 2 == 0 else 140
+            surf     = font.render("[E] 对话", True, self.cfg.COLOR_GOLD)
             surf.set_alpha(alpha)
-            pos   = (self.rect.centerx - surf.get_width() // 2,
-                     self.rect.top - 24)
-            screen.blit(surf, pos)
+            screen_x = self.rect.centerx - cam_x - surf.get_width() // 2
+            screen_y = self.rect.top - 24
+            screen.blit(surf, (screen_x, screen_y))
 
     # ── 互动 ─────────────────────────────────────────────────────────────
     def try_interact(self, player_rect: pygame.Rect) -> bool:

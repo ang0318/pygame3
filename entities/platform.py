@@ -21,11 +21,16 @@ class Platform(pygame.sprite.Sprite):
                  settings: Settings,
                  color: tuple | None = None,
                  sprite_key: str = "default",
-                 assets: AssetLoader | None = None) -> None:
+                 assets: AssetLoader | None = None,
+                 hidden: bool = False) -> None:
         super().__init__()
         c = color or settings.COLOR_PLATFORM
 
-        if assets:
+        if hidden:
+            # 隐形平台：完全透明 surface，保留 rect 碰撞体
+            self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+            self.image.fill((0, 0, 0, 0))
+        elif assets:
             tile = assets.safe_image(
                 f"assets/platform_{sprite_key}.png",
                 fallback_size=(w, h),

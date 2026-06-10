@@ -5,12 +5,14 @@ class Settings:
     SCREEN_W: int = 960
     SCREEN_H: int = 540
     TITLE: str = "冒险问答"
-    FPS: int = 60
+    FPS: int = 30
 
-    # 物理
-    GRAVITY: float = 0.6
-    JUMP_SPEED: float = -14.0
-    PLAYER_SPEED: float = 4.0
+    # 物理（按 30fps 校准：每帧步进约为 60fps 的 2 倍）
+    GRAVITY: float       = 1.1    # 原 0.6×2≈1.2，略低保留手感
+    JUMP_SPEED: float    = -18.0  # 跳跃初速
+    PLAYER_SPEED: float  = 7.0    # 移速（30fps 下体感加快）
+    JUMP_COOLDOWN: float = 0.05   # 从跳起落地后的再跳冷却（秒），极短防瞬间二连弹
+    AIR_DAMPING: float   = 0.80   # 空中松键水平衰减
 
     # 颜色
     COLOR_BG       = (30,  30,  46)

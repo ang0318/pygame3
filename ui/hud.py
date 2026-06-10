@@ -24,7 +24,7 @@ class HUD:
             screen.blit(ts, (self.cfg.SCREEN_W // 2 - ts.get_width() // 2, 6))
 
         # 分数（左）
-        ss = self.font.render(f"Score: {self.score}", True, self.cfg.COLOR_TEXT)
+        ss = self.font.render(f"分数：{self.score}", True, self.cfg.COLOR_TEXT)
         screen.blit(ss, (12, 6))
 
         # 生命（右）

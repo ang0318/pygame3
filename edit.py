@@ -8,7 +8,9 @@
   - 拖拽物体调整位置，实时显示坐标
   - 平台右下角把手可调整宽高
   - 右键删除物体（出生点不可删）
-  - [H] 切换选中物体的显示/隐藏（隐藏后仍存储在 JSON，游戏中有效，编辑器中半透明显示）
+  - [H] 切换选中物体的隐藏状态（隐藏后仍存储在 JSON，编辑器中半透明显示）
+        平台隐藏 = 隐形平台，游戏中不可见但碰撞仍然生效
+        NPC/宝石隐藏 = 游戏中不创建（不可见不可交互）
   - Ctrl+Z 撤回操作（最多 50 步）
   - [P] 添加平台  [N] 添加NPC  [G] 添加宝石
   - [S] 保存（覆写原 JSON）  [ESC] 退出
@@ -354,19 +356,14 @@ class Editor:
         running = True
         while running:
             self.clock.tick(FPS)
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                self.cam_x = max(0, self.cam_x - self.cam_speed)
-            if keys[pygame.K_RIGHT]:
-                self.cam_x = min(max(0, self.world_w - SCREEN_W),
-                                 self.cam_x + self.cam_speed)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
                 elif event.type == pygame.KEYDOWN:
-                    ctrl = keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]
+                    ctrl = (pygame.key.get_mods() &
+                            (pygame.KMOD_LCTRL | pygame.KMOD_RCTRL))
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     elif ctrl and event.key == pygame.K_z:
@@ -386,6 +383,13 @@ class Editor:
                         self.objects = [o for o in self.objects
                                         if not o.selected or o.kind == "spawn"]
                         self._status = "已删除选中物体"
+
+                elif event.type == pygame.MOUSEWHEEL:
+                    # 鼠标滚轮横向滚动（Shift+滚轮 或 直接横向滚动）
+                    scroll = event.x if event.x != 0 else -event.y
+                    self.cam_x = max(0,
+                                     min(max(0, self.world_w - SCREEN_W),
+                                         self.cam_x + scroll * 20))
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mx, my = event.pos
@@ -440,6 +444,14 @@ class Editor:
                         self._resize_obj.h = max(8,  oh + dy)
                         self._status = (f"尺寸 {self._resize_obj.w}"
                                         f"x{self._resize_obj.h}")
+
+            # 事件队列抽干后再读按键状态，方向键持续滚动视图
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                self.cam_x = max(0, self.cam_x - self.cam_speed)
+            if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                self.cam_x = min(max(0, self.world_w - SCREEN_W),
+                                 self.cam_x + self.cam_speed)
 
             self._draw()
 
@@ -530,7 +542,7 @@ class Editor:
             x += s.get_width() + 20
 
         hint = self.font_s.render(
-            "[P]平台 [N]NPC [G]宝石 [H]隐藏 [Del]删除 [Ctrl+Z]撤回 [S]保存 [ESC]退出",
+            "[←→/AD]滚动 [P]平台 [N]NPC [G]宝石 [H]隐藏 [Del]删除 [Ctrl+Z]撤回 [S]保存 [ESC]退出",
             True, C_HINT)
         self.screen.blit(hint, (SCREEN_W - hint.get_width() - 8,
                                 (TOOLBAR_H - hint.get_height()) // 2))

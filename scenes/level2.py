@@ -23,19 +23,39 @@ _DIALOGUES: dict[str, list[dict]] = {
     "boss": [
         {"text": "不错，宝石收集达标！现在接受终极考验！"},
         {
-            "text": "进阶题一：下列哪个是不可变（immutable）类型？",
-            "choices": ["list", "dict", "tuple", "set"],
-            "answer": 2,
-        },
-        {
-            "text": "进阶题二：O(n log n) 是哪种排序算法的平均复杂度？",
-            "choices": ["冒泡排序", "插入排序", "快速排序", "选择排序"],
-            "answer": 2,
-        },
-        {
-            "text": "进阶题三：pygame 中检测矩形碰撞用哪个方法？",
-            "choices": ["rect.hit()", "rect.colliderect()", "rect.overlap()", "rect.touch()"],
-            "answer": 1,
+            "question_pool": [
+                {
+                    "text": "下列哪个是不可变（immutable）类型？",
+                    "choices": ["list", "dict", "tuple"],
+                    "answer": 2,
+                },
+                {
+                    "text": "O(n log n) 是哪种排序算法的平均复杂度？",
+                    "choices": ["冒泡排序", "插入排序", "快速排序"],
+                    "answer": 2,
+                },
+                {
+                    "text": "pygame 中检测矩形碰撞用哪个方法？",
+                    "choices": ["rect.hit()", "rect.colliderect()", "rect.overlap()"],
+                    "answer": 1,
+                },
+                {
+                    "text": "Python 中哪个内置函数返回列表长度？",
+                    "choices": ["size()", "count()", "len()"],
+                    "answer": 2,
+                },
+                {
+                    "text": "以下哪个关键字用于继承父类？",
+                    "choices": ["extends", "super", "class 子(父)"],
+                    "answer": 2,
+                },
+                {
+                    "text": "哪个符号用于 Python 的幂运算？",
+                    "choices": ["^", "**", "pow"],
+                    "answer": 1,
+                },
+            ],
+            "question_count": 3,   # 每次随机抽 3 题
         },
         {"text": "全部正确！你已通关所有关卡！感谢游玩！"},
     ],
@@ -72,8 +92,8 @@ class Gem(pygame.sprite.Sprite):
 class Level2Scene(BaseLevelScene):
     def __init__(self, manager: SceneManager) -> None:
         super().__init__(manager)
-        self._level_asset_id = 2              # 专属素材目录：assets/levels/level2/
-        self._bg_image_key   = "bg_level2.png"       # 背景图（缺失自动降级纯色）
+        self._level_asset_id = 2
+        self._bg_image_key   = "bg_level2.png"
         self.hud.level_name  = "关卡 2 - 跳跃挑战"
         self.gems:            pygame.sprite.Group = pygame.sprite.Group()
         self._gem_count       = 0
@@ -82,9 +102,11 @@ class Level2Scene(BaseLevelScene):
 
     # ── 构建关卡 ─────────────────────────────────────────────────────────
     def _build_level(self) -> None:
+        # 展开题库（随机抽题）
+        expanded = {k: self.expand_dialogue(v) for k, v in _DIALOGUES.items()}
         loader = LevelLoader(
             "levels/level2_layout.json",
-            self.settings, self.assets, _DIALOGUES,
+            self.settings, self.assets, expanded,
         )
         loader.build(self.platforms, self.npcs)
         self.player   = loader.player
@@ -97,6 +119,8 @@ class Level2Scene(BaseLevelScene):
             with open(layout_path, encoding="utf-8") as f:
                 data = json.load(f)
             for g in data.get("gems", []):
+                if g.get("hidden", False):
+                    continue
                 self.gems.add(Gem(g["x"], g["y"], assets=self.assets))
 
     # ── on_enter ─────────────────────────────────────────────────────────
@@ -131,16 +155,25 @@ class Level2Scene(BaseLevelScene):
 
     # ── 渲染 ─────────────────────────────────────────────────────────────
     def draw(self, screen: pygame.Surface) -> None:
-        super().draw(screen)
+        # 先调用基类渲染世界层（平台、NPC、玩家、HUD）
+        # 但不让基类画对话框——我们最后统一画，确保对话框在最顶层
+        self._draw_world(screen)
+
+        # 宝石（世界层，在对话框之下）
         cx = int(self._cam_x)
         for gem in self.gems:
             screen.blit(gem.image, (gem.rect.x - cx, gem.rect.y))
+
+        # 宝石计数 UI（HUD层，在对话框之下）
         font    = self.assets.font(self.settings.FONT_NAME, 18)
         gem_txt = font.render(
             f"宝石 {self._gem_count} / {self._gem_required}",
             True, self.settings.COLOR_GOLD)
         screen.blit(gem_txt, (12, self.settings.SCREEN_H - 30))
 
-    # ── 过关 —— 只发事件，不关心下一步是谁 ──────────────────────────────
+        # 对话框最后画，确保最高图层
+        self.dialogue.draw(screen)
+
+    # ── 过关 ─────────────────────────────────────────────────────────────
     def _on_all_npc_done(self) -> None:
         self.bus.emit("game_over", {"win": True, "score": self.hud.score})

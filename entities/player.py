@@ -65,6 +65,10 @@ class Player(pygame.sprite.Sprite):
         # 物理
         self.vel       = pygame.math.Vector2(0, 0)
         self.on_ground = False
+        self._jump_cooldown        = 0.0    # 跳跃冷却计时器（倒计时到 0 才能再跳）
+        self._just_jumped          = False  # 本次跳跃已起跳，落地后才启动冷却
+        self._pressing_horizontal  = False  # 本帧是否按了方向键
+        self.jump_pressed          = False  # 外部通过 KEYDOWN 事件设置，消费后自动清零
 
         # 状态
         self.facing_right = True
@@ -82,8 +86,10 @@ class Player(pygame.sprite.Sprite):
 
     # ── 主更新 ────────────────────────────────────────────────────────────
     def update(self, dt: float, platforms: pygame.sprite.Group) -> None:  # type: ignore[override]
+        if self._jump_cooldown > 0:
+            self._jump_cooldown = max(0.0, self._jump_cooldown - dt)
         self._handle_input()
-        self._apply_gravity()
+        self._apply_gravity(dt)
         self._move_x(platforms)
         self._move_y(platforms)
         self._update_state()
@@ -93,20 +99,34 @@ class Player(pygame.sprite.Sprite):
     # ── 输入 ─────────────────────────────────────────────────────────────
     def _handle_input(self) -> None:
         keys = pygame.key.get_pressed()
-        self.vel.x = 0
+        self._pressing_horizontal = False
+
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.vel.x = -self.cfg.PLAYER_SPEED
             self.facing_right = False
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self._pressing_horizontal = True
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.vel.x = self.cfg.PLAYER_SPEED
             self.facing_right = True
-        if (keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]) and self.on_ground:
-            self.vel.y = self.cfg.JUMP_SPEED
-            self.on_ground = False
+            self._pressing_horizontal = True
+        else:
+            if self.on_ground:
+                self.vel.x = 0   # 落地后松键立即停
+
+        # 跳跃：仅响应按下瞬间（jump_pressed 由 handle_event 的 KEYDOWN 设置）
+        can_jump = self.on_ground and self._jump_cooldown <= 0
+        if self.jump_pressed and can_jump:
+            self.vel.y         = self.cfg.JUMP_SPEED
+            self.on_ground     = False
+            self._just_jumped  = True
+        self.jump_pressed = False   # 每帧消费后清零
 
     # ── 物理 ─────────────────────────────────────────────────────────────
-    def _apply_gravity(self) -> None:
+    def _apply_gravity(self, dt: float) -> None:
         self.vel.y = min(self.vel.y + self.cfg.GRAVITY, 20)
+        # 空中松开方向键时才施加水平阻尼，按着键时保持全速
+        if not self.on_ground and not self._pressing_horizontal:
+            self.vel.x *= self.cfg.AIR_DAMPING
 
     def _move_x(self, platforms: pygame.sprite.Group) -> None:
         self.pos.x += self.vel.x
@@ -127,6 +147,10 @@ class Player(pygame.sprite.Sprite):
             if self.vel.y > 0:
                 self.rect.bottom = p.rect.top
                 self.on_ground   = True
+                # 只有从跳跃状态落地时才启动冷却，防止瞬间二连跳
+                if self._just_jumped:
+                    self._jump_cooldown = self.cfg.JUMP_COOLDOWN
+                    self._just_jumped   = False
             elif self.vel.y < 0:
                 self.rect.top    = p.rect.bottom
             self.pos.y = float(self.rect.y)
@@ -161,4 +185,6 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = (x, y)
         self.pos.update(self.rect.x, self.rect.y)
         self.vel.update(0, 0)
-        self.on_ground = False
+        self.on_ground      = False
+        self._jump_cooldown = 0.0
+        self._just_jumped   = False

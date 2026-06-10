@@ -67,10 +67,13 @@ class LevelLoader:
                 cfg,
                 sprite_key=p.get("sprite_key", "default"),
                 assets=ast,
+                hidden=p.get("hidden", False),   # 隐形平台：有碰撞，视觉透明
             ))
 
         # ── NPC ──────────────────────────────────────────────────────────
         for n in d.get("npcs", []):
+            if n.get("hidden", False):   # 隐藏 NPC：游戏中不创建（不可见不可交互）
+                continue
             key      = n.get("dialogue_key", "")
             dialogue = self.dialogue_map.get(key, [{"text": f"（{n['name']} 暂无对话）"}])
             npcs_out.append(NPC(

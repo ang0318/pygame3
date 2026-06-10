@@ -66,7 +66,7 @@ class WinScene(BaseScene):
 
         # 标题波动
         wave = math.sin(self._timer * 3) * 6
-        t1   = self._font_big.render("*** 通关！***", True, self.settings.COLOR_GOLD)
+        t1   = self._font_big.render("通关！", True, self.settings.COLOR_GOLD)
         screen.blit(t1, (W//2 - t1.get_width()//2, int(120 + wave)))
 
         t2 = self._font_mid.render(f"最终得分：{self.score}", True, self.settings.COLOR_TEXT)

@@ -13,6 +13,9 @@ class DialogueBox:
         if box.confirmed:
             idx = box.selected_index   # None 表示无选项
             box.close()
+        if box.feedback_done:          # 反馈动画结束，由外部决定下一步
+            box.feedback_done = False
+            ...
     """
 
     PAD    = 18
@@ -35,6 +38,7 @@ class DialogueBox:
         self.confirmed       = False
         self.feedback: str | None = None   # "correct" | "wrong"
         self.feedback_timer  = 0.0
+        self.feedback_done   = False       # 反馈动画结束信号（外部消费后置 False）
 
         # 打字机
         self._full_text   = ""
@@ -46,6 +50,7 @@ class DialogueBox:
     def open(self, text: str, choices: list[str] | None = None) -> None:
         self.active          = True
         self.confirmed       = False
+        self.feedback_done   = False
         self._full_text      = text
         self._char_index     = 0.0
         self._done_typing    = False
@@ -53,14 +58,20 @@ class DialogueBox:
         self.choices         = choices
         self.selected_index  = 0
         self.feedback        = None
+        self.feedback_timer  = 0.0
 
     def close(self) -> None:
-        self.active    = False
-        self.confirmed = False
+        self.active        = False
+        self.confirmed     = False
+        self.feedback_done = False
+        self.feedback      = None
+        self.feedback_timer = 0.0
 
     def show_feedback(self, correct: bool) -> None:
+        """显示答题反馈覆盖层，动画结束后触发 feedback_done=True。"""
         self.feedback       = "correct" if correct else "wrong"
         self.feedback_timer = 1.2
+        self.feedback_done  = False
 
     # ── 更新 ─────────────────────────────────────────────────────────────
     def update(self, dt: float) -> None:
@@ -69,8 +80,9 @@ class DialogueBox:
         if self.feedback_timer > 0:
             self.feedback_timer -= dt
             if self.feedback_timer <= 0:
-                self.feedback = None
-                self.confirmed = True   # 反馈结束后自动确认
+                self.feedback_timer = 0.0
+                self.feedback       = None
+                self.feedback_done  = True   # 通知外部反馈已结束，不再设 confirmed
             return
         if not self._done_typing:
             self._char_index += self._char_speed * dt
@@ -84,21 +96,22 @@ class DialogueBox:
             return
         if event.type == pygame.KEYDOWN:
             if not self._done_typing:
-                # 按任意键跳过打字机
-                self._char_index  = float(len(self._full_text))
-                self.text         = self._full_text
-                self._done_typing = True
+                # Enter 跳过打字机动画
+                if event.key == pygame.K_RETURN:
+                    self._char_index  = float(len(self._full_text))
+                    self.text         = self._full_text
+                    self._done_typing = True
                 return
 
             if self.choices:
-                if event.key in (pygame.K_UP, pygame.K_w):
+                if event.key in (pygame.K_UP,):
                     self.selected_index = (self.selected_index - 1) % len(self.choices)
-                elif event.key in (pygame.K_DOWN, pygame.K_s):
+                elif event.key in (pygame.K_DOWN,):
                     self.selected_index = (self.selected_index + 1) % len(self.choices)
-                elif event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_e):
+                elif event.key == pygame.K_RETURN:
                     self.confirmed = True
             else:
-                if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_e):
+                if event.key == pygame.K_RETURN:
                     self.confirmed = True
 
     # ── 渲染 ─────────────────────────────────────────────────────────────
@@ -144,7 +157,7 @@ class DialogueBox:
                 s = self.small_font.render(prefix + ch, True, color)
                 screen.blit(s, (x0 + 10, cy + i * 28))
         elif not self.choices and self._done_typing:
-            hint = self.small_font.render("[ E / Space / Enter ] 继续", True, (120, 120, 160))
+            hint = self.small_font.render("[ Enter ] 继续", True, (120, 120, 160))
             screen.blit(hint, (self.box_rect.right - hint.get_width() - self.PAD,
                                self.box_rect.bottom - hint.get_height() - 8))
 
@@ -153,16 +166,47 @@ class DialogueBox:
     def _blit_wrapped(surface: pygame.Surface, text: str,
                       font: pygame.font.Font, color: tuple,
                       x: int, y: int, max_w: int) -> None:
-        words = text.split(" ")
-        line  = ""
-        dy    = 0
-        for word in words:
-            test = line + word + " "
-            if font.size(test)[0] > max_w and line:
-                surface.blit(font.render(line.rstrip(), True, color), (x, y + dy))
-                dy  += font.get_linesize()
-                line = word + " "
-            else:
-                line = test
-        if line:
-            surface.blit(font.render(line.rstrip(), True, color), (x, y + dy))
+        """支持中英文混排 + \\n 强制换行的自动换行渲染。
+        中文逐字切割；英文单词保持整体不拆断。
+        """
+        # 先按 \n 拆成段落，每段独立处理
+        paragraphs = text.split("\n")
+        dy = 0
+        for para in paragraphs:
+            line = ""
+            i    = 0
+            while i < len(para):
+                ch = para[i]
+                # 英文单词：向前找到单词边界一起测量
+                if ch.isascii() and not ch.isspace():
+                    word = ""
+                    j = i
+                    while j < len(para) and para[j].isascii() and not para[j].isspace():
+                        word += para[j]
+                        j += 1
+                    test = line + word
+                    if font.size(test)[0] > max_w and line:
+                        surface.blit(font.render(line, True, color), (x, y + dy))
+                        dy  += font.get_linesize()
+                        line = word
+                    else:
+                        line = test
+                    i = j
+                    # 空格直接追加（不触发换行）
+                    if i < len(para) and para[i] == " ":
+                        line += " "
+                        i += 1
+                else:
+                    # 中文或其他字符：逐字测量
+                    test = line + ch
+                    if font.size(test)[0] > max_w and line:
+                        surface.blit(font.render(line, True, color), (x, y + dy))
+                        dy  += font.get_linesize()
+                        line = ch
+                    else:
+                        line = test
+                    i += 1
+            # 段落末尾剩余内容
+            if line:
+                surface.blit(font.render(line, True, color), (x, y + dy))
+            dy += font.get_linesize()   # \n 产生的段落间距
