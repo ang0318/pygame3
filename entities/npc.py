@@ -59,6 +59,9 @@ class NPC(pygame.sprite.Sprite):
         self.image = self._idle_frames[0]
         self.rect  = self.image.get_rect(midbottom=(x, y))
 
+        # 朝向（素材约定面朝右，facing_left=True 时水平翻转）
+        self._facing_left = False
+
         # 对话状态
         self.talking   = False
         self.step      = 0
@@ -85,7 +88,14 @@ class NPC(pygame.sprite.Sprite):
             if self._anim_timer >= 1.0 / self._anim_fps:
                 self._anim_timer -= 1.0 / self._anim_fps
                 self._frame_idx   = (self._frame_idx + 1) % len(frames)
-        self.image = frames[self._frame_idx % len(frames)]
+        base = frames[self._frame_idx % len(frames)]
+        # 素材约定面朝右；facing_left 时水平翻转
+        self.image = (pygame.transform.flip(base, True, False)
+                      if self._facing_left else base)
+
+    def face_toward(self, player_rect: "pygame.Rect") -> None:
+        """对话时朝向玩家（玩家在左则翻转素材）。"""
+        self._facing_left = player_rect.centerx < self.rect.centerx
 
     # ── 渲染提示 ──────────────────────────────────────────────────────────
     def draw_hint(self, screen: pygame.Surface,
@@ -114,6 +124,7 @@ class NPC(pygame.sprite.Sprite):
             return False
         dist = abs(self.rect.centerx - player_rect.centerx)
         if dist < self.INTERACT_DIST and not self.talking:
+            self.face_toward(player_rect)   # 对话前先朝向玩家
             self.talking    = True
             self.step       = 0
             self._frame_idx = 0

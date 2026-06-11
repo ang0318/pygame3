@@ -86,12 +86,19 @@ npc = NPC(
 | `npc.step` | 当前对话步骤索引 |
 | `npc.current_dialogue` | 当前对话条目（dict 或 None） |
 
+### 朝向规则
+
+素材必须**面朝右**。代码在以下时机自动处理翻转：
+
+- 触发对话时（`try_interact()`）：调用 `face_toward(player_rect)`，NPC 自动朝向玩家
+- 也可以手动调用：`npc.face_toward(player_rect)`
+
 ### 素材约定
 
 | 文件名 | 用途 |
 |--------|------|
-| `npc_{sprite_key}_idle_0.png` | 静止帧 |
-| `npc_{sprite_key}_talk_0.png` | 说话帧（缺失时复用 idle） |
+| `npc_{sprite_key}_idle_0.png` | 静止帧（**必须面朝右**） |
+| `npc_{sprite_key}_talk_0.png` | 说话帧（缺失时复用 idle，**必须面朝右**） |
 
 `sprite_key` 预设值：`guide` / `gatekeeper` / `boss` / `default`，可自定义。
 
