@@ -1,0 +1,134 @@
+# 素材规范
+
+---
+
+## 三级降级机制
+
+加载任何图片时按以下顺序查找，找到即停止，找不到也**不崩溃**：
+
+```
+优先级 1 → assets/levels/level{N}/{filename}   关卡专属素材
+优先级 2 → assets/{filename}                   通用素材
+优先级 3 → 同尺寸纯色色块（代码自动生成）       兜底
+```
+
+这意味着你可以：
+- 只放通用素材，所有关卡共用
+- 对某个关卡放专属素材，自动覆盖通用素材
+- 什么都不放，游戏用色块占位，功能完全正常
+
+---
+
+## 切换关卡素材上下文
+
+在关卡场景的 `on_enter()` 中调用（`BaseLevelScene` 已自动处理）：
+
+```python
+self.assets.set_level(1)   # 启用 assets/levels/level1/ 前缀
+```
+
+---
+
+## 背景图
+
+| 文件名 | 对应场景 | 缺失时 |
+|--------|----------|--------|
+| `bg_menu.png` | 主菜单 | 显示动态网格动效 |
+| `bg_level1.png` | 关卡 1 | 纯色填充 `#1e1e2e` |
+| `bg_level2.png` | 关卡 2 | 纯色填充 `#1e1e2e` |
+
+- 建议尺寸：**960×540**（与窗口一致，会自动缩放）
+- 放在 `assets/` 或 `assets/levels/level{N}/` 均可
+
+新增关卡时，在场景 `__init__` 中设置：
+
+```python
+self._bg_image_key = "bg_level3.png"
+```
+
+---
+
+## 背景音乐
+
+`main.py` 自动按 `.mp3 → .ogg → .wav` 顺序探测，放一个即可：
+
+```
+assets/bgm.mp3   ← 推荐
+assets/bgm.ogg
+assets/bgm.wav
+```
+
+缺失时静默，不报错。
+
+---
+
+## 玩家素材
+
+| 文件名 | 状态 | 帧数 | 建议尺寸 |
+|--------|------|------|---------|
+| `player_idle_0.png` | 静止 | 1 | 32×48 |
+| `player_run_0.png` ~ `player_run_3.png` | 跑步 | 4 | 32×48 |
+| `player_jump_0.png` | 跳跃 | 1 | 32×48 |
+
+命名格式：`player_{state}_{frame}.png`，加载时自动缩放到 32×48。
+
+---
+
+## NPC 素材
+
+| 文件名格式 | 状态 | 帧数 |
+|------------|------|------|
+| `npc_{sprite_key}_idle_0.png` | 静止 | 1 |
+| `npc_{sprite_key}_talk_0.png` | 说话 | 1（缺失时复用 idle） |
+
+`sprite_key` 由关卡 JSON 的 `sprite_key` 字段指定，常用值：
+
+| sprite_key | 用途 |
+|------------|------|
+| `guide` | 向导 NPC |
+| `gatekeeper` | 守门者 |
+| `boss` | Boss |
+| `default` | 通用 |
+
+自定义：JSON 中写 `"sprite_key": "shopkeeper"`，对应 `npc_shopkeeper_idle_0.png`。
+
+---
+
+## 平台素材
+
+| 文件名格式 | 说明 |
+|------------|------|
+| `platform_{sprite_key}.png` | 平台贴图，会自动平铺填充 |
+
+JSON 中 `"sprite_key": "grass"` 对应 `platform_grass.png`，任意尺寸均可（平铺）。
+
+---
+
+## 宝石
+
+| 文件名 | 建议尺寸 |
+|--------|---------|
+| `gem.png` | 18×18 |
+
+缺失时用菱形色块占位。
+
+---
+
+## 命名规范汇总
+
+| 类型 | 命名格式 | 尺寸建议 |
+|------|----------|---------|
+| 背景 | `bg_{scene}.png` | 960×540 |
+| 玩家帧 | `player_{state}_{frame}.png` | 32×48 |
+| NPC 帧 | `npc_{key}_{state}_{frame}.png` | 32×48 |
+| 平台贴图 | `platform_{key}.png` | 任意（可平铺） |
+| 宝石 | `gem.png` | 18×18 |
+| 背景音乐 | `bgm.mp3 / .ogg / .wav` | — |
+
+---
+
+## 快速替换流程
+
+1. 按上表命名好文件
+2. 放入 `assets/` 或 `assets/levels/level{N}/`
+3. 重新运行 `python main.py`，自动生效，无需改代码
