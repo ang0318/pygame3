@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "name": "关卡 3 - 星星接接乐",
+    "world_w": 960
+  },
+  "player_spawn": {
+    "x": 480,
+    "y": 510
+  },
+  "platforms": [
+    {
+      "x": 0,
+      "y": 520,
+      "w": 960,
+      "h": 20,
+      "sprite_key": "default",
+      "hidden": false
+    }
+  ],
+  "npcs": [
+    {
+      "x": 80,
+      "y": 490,
+      "name": "提示者",
+      "sprite_key": "guide",
+      "dialogue_key": "hint",
+      "optional": true
+    },
+    {
+      "x": 880,
+      "y": 490,
+      "name": "守门人",
+      "sprite_key": "gatekeeper",
+      "dialogue_key": "gatekeeper"
+    }
+  ]
+}

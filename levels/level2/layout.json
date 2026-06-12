@@ -72,7 +72,8 @@
       "y": 380,
       "name": "引导者",
       "sprite_key": "guide",
-      "dialogue_key": "intro"
+      "dialogue_key": "intro",
+      "optional": true
     },
     {
       "x": 1960,

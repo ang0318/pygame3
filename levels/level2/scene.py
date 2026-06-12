@@ -135,4 +135,4 @@ class Level2Scene(BaseLevelScene):
 
     # ── 过关 ─────────────────────────────────────────────────────────────
     def _on_all_npc_done(self) -> None:
-        self.bus.emit("game_over", {"win": True, "score": self.hud.score})
+        self.bus.emit("next_level")
