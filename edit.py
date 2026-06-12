@@ -574,10 +574,12 @@ def _dict_to_obj(kind: str, d: dict) -> EditorObject | None:
 # ── 入口 ──────────────────────────────────────────────────────────────────────
 def main() -> None:
     levels_dir = Path("levels")
-    jsons = sorted(levels_dir.glob("*_layout.json"))
+    # 新结构：levels/levelN/layout.json
+    jsons = sorted(levels_dir.glob("*/layout.json"),
+                   key=lambda p: p.parent.name)
 
     if not jsons:
-        print("未找到任何关卡文件（levels/*_layout.json）")
+        print("未找到任何关卡文件（levels/levelN/layout.json）")
         sys.exit(1)
 
     print("=" * 44)
