@@ -4,8 +4,6 @@
   assets/player_idle_0.png          静止帧（1 帧）
   assets/player_run_0.png           跑步帧 0
   assets/player_run_1.png           跑步帧 1
-  assets/player_run_2.png           跑步帧 2
-  assets/player_run_3.png           跑步帧 3
   assets/player_jump_0.png          跳跃帧（1 帧）
 所有图片尺寸建议 32×48 px，加载后自动缩放到 PLAYER_W × PLAYER_H。
 """
@@ -39,7 +37,7 @@ class Player(pygame.sprite.Sprite):
                 "idle": assets.frames(
                     "assets/player_idle_{}.png", 1, self._size, fb),
                 "run":  assets.frames(
-                    "assets/player_run_{}.png",  4, self._size, fb),
+                    "assets/player_run_{}.png",  2, self._size, fb),
                 "jump": assets.frames(
                     "assets/player_jump_{}.png", 1, self._size, fb),
             }
