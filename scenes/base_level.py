@@ -185,20 +185,9 @@ class BaseLevelScene(BaseScene):
 
         # 只有"必须完成"的 NPC（optional=False）全部对话完毕才算过关
         required = [n for n in self.npcs if not getattr(n, "optional", False)]
-        all_done = required and all(n.finished for n in required)
-        if not self.completed and all_done:
+        if not self.completed and required and all(n.finished for n in required):
             self.completed = True
             self._on_all_npc_done()
-        elif not self.completed:
-            # 调试：每 3 秒打印一次 NPC 状态
-            if not hasattr(self, '_dbg_t'):
-                self._dbg_t = 0.0
-            self._dbg_t += dt
-            if self._dbg_t >= 3.0:
-                self._dbg_t = 0.0
-                print(f"[DEBUG] npcs={len(self.npcs)} required={len(required)}")
-                for n in self.npcs:
-                    print(f"  NPC '{n.name}' optional={getattr(n,'optional',False)} finished={n.finished} talking={n.talking} step={n.step}/{len(n.dialogue)}")
 
     # ── 对话流程 ──────────────────────────────────────────────────────────
     def _open_dialogue_step(self, npc: NPC) -> None:
