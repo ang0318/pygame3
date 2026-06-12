@@ -181,35 +181,43 @@ class Level3Scene(BaseLevelScene):
             super().update(dt)
             return
 
-        # 生成新星星
-        self._spawn_t += dt
-        if self._spawn_t >= self._current_interval():
-            self._spawn_t -= self._current_interval()
-            self._items.add(
-                FallingItem(self.settings.SCREEN_W, self._current_speed())
-            )
-
-        # 更新所有星星
-        self._items.update(dt)
-
-        # 检测玩家接住
-        if self.player:
-            caught = pygame.sprite.spritecollide(self.player, self._items, True)
-            for _ in caught:
-                self._caught += 1
-                self.hud.score += 30
-
-        # 检测漏接（落出底部）
-        for item in list(self._items):
-            if item.rect.top > self.settings.SCREEN_H:
-                self._miss_effects.append(
-                    MissEffect(item.rect.centerx,
-                               self.settings.SCREEN_H - 20,
-                               self._font_small)
+        # 达到目标后停止生成，清空屏幕上残余星星
+        if self._caught < self.ITEM_REQUIRED:
+            # 生成新星星
+            self._spawn_t += dt
+            if self._spawn_t >= self._current_interval():
+                self._spawn_t -= self._current_interval()
+                self._items.add(
+                    FallingItem(self.settings.SCREEN_W, self._current_speed())
                 )
-                item.kill()
-                self._missed += 1
-                self.hud.score = max(0, self.hud.score - 10)
+
+            # 更新所有星星
+            self._items.update(dt)
+
+            # 检测玩家接住
+            if self.player:
+                caught = pygame.sprite.spritecollide(self.player, self._items, True)
+                for _ in caught:
+                    self._caught += 1
+                    self.hud.score += 30
+                    # 刚好接满：立即清屏并自动触发守门人对话
+                    if self._caught >= self.ITEM_REQUIRED:
+                        for item in list(self._items):
+                            item.kill()
+                        self._auto_trigger_gatekeeper()
+                        break
+
+            # 检测漏接（落出底部）
+            for item in list(self._items):
+                if item.rect.top > self.settings.SCREEN_H:
+                    self._miss_effects.append(
+                        MissEffect(item.rect.centerx,
+                                   self.settings.SCREEN_H - 20,
+                                   self._font_small)
+                    )
+                    item.kill()
+                    self._missed += 1
+                    self.hud.score = max(0, self.hud.score - 10)
 
         # 更新 miss 特效
         for eff in self._miss_effects[:]:
@@ -221,10 +229,27 @@ class Level3Scene(BaseLevelScene):
         super().update(dt)
 
         # 动态 HUD 标题
-        self.hud.level_name = (
-            f"关卡 3 - 接住 {self._caught}/{self.ITEM_REQUIRED}  "
-            f"漏接 {self._missed}"
-        )
+        if self._caught >= self.ITEM_REQUIRED:
+            self.hud.level_name = f"关卡 3 - 已接满！回答守门人的问题吧！"
+        else:
+            self.hud.level_name = (
+                f"关卡 3 - 接住 {self._caught}/{self.ITEM_REQUIRED}  "
+                f"漏接 {self._missed}"
+            )
+
+    # ── 自动触发守门人对话 ────────────────────────────────────────────────
+    def _auto_trigger_gatekeeper(self) -> None:
+        """接满星星后自动开启守门人对话，无需玩家走过去按 E。"""
+        gk = self._gatekeeper
+        if not gk or gk.finished or gk.talking:
+            return
+        # 强制进入对话状态（绕过距离检测）
+        if self.player:
+            gk.face_toward(self.player.rect)
+        gk.talking   = True
+        gk.step      = 0
+        self._active_npc = gk
+        self._open_dialogue_step(gk)
 
     # ── 事件（守门人门槛检查） ────────────────────────────────────────────
     def handle_event(self, event: pygame.event.Event) -> None:
