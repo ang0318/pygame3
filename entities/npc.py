@@ -78,8 +78,14 @@ class NPC(pygame.sprite.Sprite):
         return surf
 
     # ── 更新 ─────────────────────────────────────────────────────────────
-    def update(self, dt: float) -> None:  # type: ignore[override]
+    def update(self, dt: float,                               # type: ignore[override]
+               player_rect: "pygame.Rect | None" = None) -> None:
         self._hint_timer += dt
+
+        # 实时朝向玩家（只要玩家位置已知）
+        if player_rect is not None:
+            self.face_toward(player_rect)
+
         frames = self._idle_frames
         if len(frames) > 1:
             self._anim_timer += dt
@@ -92,7 +98,7 @@ class NPC(pygame.sprite.Sprite):
                       if self._facing_left else base)
 
     def face_toward(self, player_rect: "pygame.Rect") -> None:
-        """对话时朝向玩家（玩家在左则翻转素材）。"""
+        """朝向玩家（玩家在左则翻转素材）。"""
         self._facing_left = player_rect.centerx < self.rect.centerx
 
     # ── 渲染提示 ──────────────────────────────────────────────────────────

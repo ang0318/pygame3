@@ -174,7 +174,7 @@ class BaseLevelScene(BaseScene):
         self.player.update(dt, self.platforms)
 
         for npc in self.npcs:
-            npc.update(dt)
+            npc.update(dt, self.player.rect)
 
         target_x = self.player.rect.centerx - self.settings.SCREEN_W // 2
         # 帧率无关的指数平滑：speed=6 时约 0.17 秒追上 90%
