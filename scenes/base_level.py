@@ -248,20 +248,26 @@ class BaseLevelScene(BaseScene):
             self._open_dialogue_step(npc)
 
     # ── 渲染 ──────────────────────────────────────────────────────────────
+    # 视差系数：背景随摄像机移动的比例（0=固定，1=跟随前景，建议 0.2~0.4）
+    BG_PARALLAX = 0.3
+
     def _draw_world(self, screen: pygame.Surface) -> None:
         """绘制世界层（背景、平台、NPC、玩家、HUD），不含对话框。
         子类可在此之后插入额外内容，最后统一调用 dialogue.draw() 保证最高图层。
         """
+        W, H = self.settings.SCREEN_W, self.settings.SCREEN_H
         bg_key = getattr(self, "_bg_image_key", None)
         if bg_key:
-            bg = self.assets.safe_image(
-                bg_key,
-                (self.settings.SCREEN_W, self.settings.SCREEN_H),
-                self.settings.COLOR_BG,
-            )
-            bg = pygame.transform.scale(
-                bg, (self.settings.SCREEN_W, self.settings.SCREEN_H))
-            screen.blit(bg, (0, 0))
+            bg = self.assets.safe_image(bg_key, (W, H), self.settings.COLOR_BG)
+            bg = pygame.transform.scale(bg, (W, H))
+            # 视差偏移：背景比前景移动慢，产生远景感
+            # 超出左右边界时做镜像平铺，避免空白
+            para_off = int(self._cam_x * self.BG_PARALLAX) % W
+            if para_off == 0:
+                screen.blit(bg, (0, 0))
+            else:
+                screen.blit(bg, (-para_off, 0))
+                screen.blit(bg, (W - para_off, 0))
         else:
             screen.fill(self.settings.COLOR_BG)
         cx = int(self._cam_x)
