@@ -1,6 +1,13 @@
 """
-关卡 2 —— 从 levels/level2_layout.json 加载所有物体位置
-新玩法：收集宝石 + 问答双重考验
+关卡 2 场景
+素材、布局、对话数据全部在 levels/level2/ 目录内自包含。
+
+目录结构：
+  levels/level2/
+    layout.json      —— 平台/NPC/宝石/玩家出生点布局
+    dialogues.py     —— 对话与题库数据
+    scene.py         —— 本文件，关卡场景类
+
 过关条件：收集 >= 3 颗宝石 且 Boss 所有问答正确
 过关后：bus.emit("game_over", {"win": True, "score": N})
 """
@@ -14,54 +21,7 @@ from engine.scene_manager import SceneManager
 from engine.level_loader  import LevelLoader
 from scenes.base_level    import BaseLevelScene
 from entities.npc         import NPC
-
-# ── 对话数据 ──────────────────────────────────────────────────────────────────
-_DIALOGUES: dict[str, list[dict]] = {
-    "intro": [
-        {"text": "关卡 2！收集 3 颗以上宝石，再来挑战 Boss！"},
-    ],
-    "boss": [
-        {"text": "不错，宝石收集达标！现在接受终极考验！"},
-        {
-            "question_pool": [
-                {
-                    "text": "下列哪个是不可变（immutable）类型？",
-                    "choices": ["list", "dict", "tuple"],
-                    "answer": 2,
-                },
-                {
-                    "text": "O(n log n) 是哪种排序算法的平均复杂度？",
-                    "choices": ["冒泡排序", "插入排序", "快速排序"],
-                    "answer": 2,
-                },
-                {
-                    "text": "pygame 中检测矩形碰撞用哪个方法？",
-                    "choices": ["rect.hit()", "rect.colliderect()", "rect.overlap()"],
-                    "answer": 1,
-                },
-                {
-                    "text": "Python 中哪个内置函数返回列表长度？",
-                    "choices": ["size()", "count()", "len()"],
-                    "answer": 2,
-                },
-                {
-                    "text": "以下哪个关键字用于继承父类？",
-                    "choices": ["extends", "super", "class 子(父)"],
-                    "answer": 2,
-                },
-                {
-                    "text": "哪个符号用于 Python 的幂运算？",
-                    "choices": ["^", "**", "pow"],
-                    "answer": 1,
-                },
-            ],
-            "question_count": 3,   # 每次随机抽 3 题
-        },
-        {"text": "全部正确！你已通关所有关卡！感谢游玩！"},
-    ],
-}
-
-_BOSS_LOCKED = [{"text": "你还没收集到足够的宝石，先去探索地图吧！"}]
+from levels.level2.dialogues import DIALOGUES, BOSS_LOCKED
 
 
 # ── 宝石实体 ──────────────────────────────────────────────────────────────────
@@ -72,7 +32,7 @@ class Gem(pygame.sprite.Sprite):
         super().__init__()
         size = (18, 18)
         if assets:
-            self.image = assets.safe_image("assets/gem.png", size, color)
+            self.image = assets.safe_image("gem.png", size, color)
         else:
             self.image = pygame.Surface(size, pygame.SRCALPHA)
             pts = [(9, 0), (18, 9), (9, 18), (0, 9)]
@@ -103,9 +63,9 @@ class Level2Scene(BaseLevelScene):
     # ── 构建关卡 ─────────────────────────────────────────────────────────
     def _build_level(self) -> None:
         # 展开题库（随机抽题）
-        expanded = {k: self.expand_dialogue(v) for k, v in _DIALOGUES.items()}
+        expanded = {k: self.expand_dialogue(v) for k, v in DIALOGUES.items()}
         loader = LevelLoader(
-            "levels/level2_layout.json",
+            "levels/level2/layout.json",
             self.settings, self.assets, expanded,
         )
         loader.build(self.platforms, self.npcs)
@@ -114,7 +74,7 @@ class Level2Scene(BaseLevelScene):
         self._boss    = self.npcs[-1] if self.npcs else None
 
         # 宝石从 JSON 加载
-        layout_path = Path("levels/level2_layout.json")
+        layout_path = Path("levels/level2/layout.json")
         if layout_path.exists():
             with open(layout_path, encoding="utf-8") as f:
                 data = json.load(f)
@@ -149,14 +109,13 @@ class Level2Scene(BaseLevelScene):
             dist = abs(self._boss.rect.centerx - self.player.rect.centerx)
             if dist < NPC.INTERACT_DIST and not self._boss.talking and not self._boss.finished:
                 if self._gem_count < self._gem_required:
-                    self.dialogue.open(_BOSS_LOCKED[0]["text"])
+                    self.dialogue.open(BOSS_LOCKED[0]["text"])
                     return
         super().handle_event(event)
 
     # ── 渲染 ─────────────────────────────────────────────────────────────
     def draw(self, screen: pygame.Surface) -> None:
         # 先调用基类渲染世界层（平台、NPC、玩家、HUD）
-        # 但不让基类画对话框——我们最后统一画，确保对话框在最顶层
         self._draw_world(screen)
 
         # 宝石（世界层，在对话框之下）

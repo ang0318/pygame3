@@ -1,7 +1,7 @@
 """
 资源加载器 —— 带缓存 + 素材热插拔 + 关卡独立素材优先
 查找顺序（三级降级）：
-  1. assets/levels/levelN/<filename>   关卡专属素材
+  1. levels/levelN/assets/<filename>   关卡专属素材（与关卡代码同目录）
   2. assets/<filename>                 通用素材
   3. 同尺寸颜色色块                    兜底，永不报错
 """
@@ -22,12 +22,12 @@ class AssetLoader:
     def set_level(self, level_id: str | int | None) -> None:
         """
         切换当前关卡上下文。
-        level_id = 1  → 专属目录 assets/levels/level1/
+        level_id = 1  → 专属目录 levels/level1/assets/
         level_id = None → 只查通用目录
         调用时机：关卡场景 on_enter()。
         """
         if level_id is not None:
-            self._level_prefix = f"assets/levels/level{level_id}/"
+            self._level_prefix = f"levels/level{level_id}/assets/"
         else:
             self._level_prefix = ""
 

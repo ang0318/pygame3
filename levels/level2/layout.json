@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "name": "关卡 2 - 跳跃挑战",
+    "world_w": 2400
+  },
+  "player_spawn": {
+    "x": 80,
+    "y": 468
+  },
+  "platforms": [
+    {
+      "x": 0,
+      "y": 501,
+      "w": 2400,
+      "h": 40,
+      "sprite_key": "default",
+      "hidden": true
+    },
+    {
+      "x": 200,
+      "y": 420,
+      "w": 200,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 500,
+      "y": 360,
+      "w": 160,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 750,
+      "y": 300,
+      "w": 160,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 1000,
+      "y": 240,
+      "w": 200,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 1300,
+      "y": 300,
+      "w": 160,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 1550,
+      "y": 360,
+      "w": 200,
+      "h": 30,
+      "sprite_key": "default"
+    },
+    {
+      "x": 1850,
+      "y": 280,
+      "w": 300,
+      "h": 220,
+      "sprite_key": "default"
+    }
+  ],
+  "npcs": [
+    {
+      "x": 250,
+      "y": 390,
+      "name": "引导者",
+      "sprite_key": "guide",
+      "dialogue_key": "intro"
+    },
+    {
+      "x": 1960,
+      "y": 250,
+      "name": "终极Boss",
+      "sprite_key": "gatekeeper",
+      "dialogue_key": "boss"
+    }
+  ],
+  "gems": [
+    {"x": 560, "y": 330},
+    {"x": 810, "y": 270},
+    {"x": 1060, "y": 210},
+    {"x": 1360, "y": 270},
+    {"x": 1610, "y": 330}
+  ]
+}

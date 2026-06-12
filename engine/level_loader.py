@@ -1,6 +1,11 @@
 """
 通用关卡加载器 —— 从 JSON 读取布局，构建实体
-所有关卡共用此加载器，JSON 格式见 levels/README 或 edit.py 说明。
+所有关卡共用此加载器。
+
+新路径约定：
+  JSON 路径由各关卡的 scene.py 传入，例如：
+    "levels/level1/layout.json"
+    "levels/level2/layout.json"
 """
 from __future__ import annotations
 import json

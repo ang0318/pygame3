@@ -57,7 +57,7 @@ def main() -> None:
     _try_play_music("assets/bgm")
     music_ui = MusicControl(cfg, assets)
 
-    # ── 关卡注册表（自动扫描 scenes/level*.py） ───────────────────────────
+    # ── 关卡注册表（自动扫描 levels/levelN/scene.py） ────────────────────
     registry = LevelRegistry(mgr)
 
     # ── 事件总线回调 ──────────────────────────────────────────────────────
