@@ -20,13 +20,17 @@ assets/
 ├── player_idle_0.png               ← 玩家静止帧
 ├── player_run_0~3.png              ← 玩家跑步动画（4帧）
 ├── player_jump_0.png               ← 玩家跳跃帧
-├── npc_{key}_idle_0.png            ← NPC 静止帧
-├── npc_{key}_talk_0.png            ← NPC 说话帧
+├── npc.png                         ← NPC 帧（所有 NPC 共用）
 ├── platform_default.png            ← 通用平台贴图
-├── gem.png                         ← 宝石图标
-└── levels/
-    ├── level1/                     ← 关卡1专属素材（可选，覆盖通用）
-    └── level2/                     ← 关卡2专属素材（可选，覆盖通用）
+└── gem.png                         ← 宝石图标
+```
+
+关卡专属素材放在各自关卡目录中（优先于通用素材）：
+
+```
+levels/
+├── level1/assets/                  ← 关卡1专属素材（可选，覆盖通用）
+└── level2/assets/                  ← 关卡2专属素材（可选，覆盖通用）
 ```
 
 所有素材缺失时自动用色块占位，不会导致游戏崩溃。

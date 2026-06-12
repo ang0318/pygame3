@@ -8,7 +8,7 @@
 python edit.py
 ```
 
-终端会列出所有 `levels/*_layout.json`，输入编号后进入 pygame 编辑窗口。
+终端会列出所有 `levels/levelN/layout.json`，输入编号后进入 pygame 编辑窗口。
 
 ---
 
@@ -68,9 +68,10 @@ python edit.py
 - `H` 键：切换隐形（游戏中透明但保留碰撞）
 
 ### NPC（橙色人形）
-- 编辑器只管位置，对话内容在 `scenes/levelN.py` 的 `_DIALOGUES` 中定义
-- NPC 的 `dialogue_key` 需与代码中的字典 key 对应
+- 编辑器只管位置，对话内容在 `levels/levelN/dialogues.py` 的 `DIALOGUES` 中定义
+- NPC 的 `dialogue_key` 需与字典 key 对应
 - `H` 键：隐藏 NPC（游戏中不创建，不可交互）
+- `optional` 字段：可选 NPC，完成对话不计入过关条件（见 JSON 格式）
 
 ### 宝石（黄色菱形）
 - 仅关卡 2 使用，其他关卡也可添加（需在场景代码中读取）
@@ -92,7 +93,7 @@ python edit.py
 
 ## JSON 格式说明
 
-保存后的 JSON 结构（`levels/levelN_layout.json`）：
+保存后的 JSON 结构（`levels/levelN/layout.json`）：
 
 ```json
 {
@@ -108,9 +109,16 @@ python edit.py
   "npcs": [
     {
       "x": 400, "y": 400,
-      "name": "向导",
+      "name": "引导者",
       "sprite_key": "guide",
-      "dialogue_key": "guide"
+      "dialogue_key": "guide",
+      "optional": true
+    },
+    {
+      "x": 1200, "y": 400,
+      "name": "守门者",
+      "sprite_key": "gatekeeper",
+      "dialogue_key": "gatekeeper"
     }
   ],
   "gems": [
@@ -118,6 +126,13 @@ python edit.py
   ]
 }
 ```
+
+### NPC optional 字段
+
+| 值 | 说明 |
+|----|------|
+| 省略 / `false` | **必须**完成对话才计入过关条件 |
+| `true` | 可选对话，完成与否不影响过关 |
 
 ### meta 字段
 
@@ -138,3 +153,5 @@ python edit.py
 6. `P/N/G` 添加新物体
 7. `Ctrl+Z` 撤回误操作
 8. `S` 保存，`python main.py` 验证效果
+
+> 注意：编辑器保存的 JSON 不包含 `optional` 字段，需手动编辑 `levels/levelN/layout.json` 添加。

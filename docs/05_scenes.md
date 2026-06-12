@@ -52,7 +52,7 @@ class MyScene(BaseScene):
 
 [`BaseLevelScene`](../scenes/base_level.py) 在 `BaseScene` 基础上封装了：
 
-- 平台物理 & 摄像机跟随
+- 平台物理 & 摄像机跟随（指数平滑，帧率无关）
 - NPC 对话 & 问答流程
 - HUD 显示
 - 背景图加载
@@ -66,15 +66,18 @@ class Level3Scene(BaseLevelScene):
         ...
 
     def _on_all_npc_done(self) -> None:
-        """所有 NPC 对话完成后的处理（过关逻辑）"""
+        """所有必须完成的 NPC 对话完成后触发（过关逻辑）"""
         self.bus.emit("next_level")
 ```
+
+> **过关条件**：只有 `optional=False`（默认）的 NPC 全部 `finished` 才触发 `_on_all_npc_done()`。
+> 引导型 NPC 在 layout.json 中设置 `"optional": true` 即可排除在外。
 
 ### 可配置属性（在 `__init__` 中设置）
 
 | 属性 | 说明 | 示例 |
 |------|------|------|
-| `self._level_asset_id` | 关卡素材目录编号 | `1` → `assets/levels/level1/` |
+| `self._level_asset_id` | 关卡素材目录编号 | `1` → `levels/level1/assets/` |
 | `self._bg_image_key` | 背景图文件名 | `"bg_level1.png"` |
 | `self.hud.level_name` | HUD 顶部显示的关卡名 | `"关卡 1 - 知识入门"` |
 
@@ -82,13 +85,14 @@ class Level3Scene(BaseLevelScene):
 
 ## 摄像机
 
-`BaseLevelScene` 内置水平摄像机，跟随玩家平滑移动：
+`BaseLevelScene` 内置水平摄像机，使用**指数平滑**跟随玩家（帧率无关）：
 
 ```python
 # 渲染时减去 cam_x 即可
 screen.blit(sprite.image, (sprite.rect.x - int(self._cam_x), sprite.rect.y))
 ```
 
+平滑系数 `speed=6`，约 0.17 秒追上目标位置的 90%，手感流畅不跳变。
 摄像机范围自动夹紧到 `[0, world_w - SCREEN_W]`，不会超出关卡边界。
 
 ---
@@ -98,8 +102,8 @@ screen.blit(sprite.image, (sprite.rect.x - int(self._cam_x), sprite.rect.y))
 | 文件 | 类名 | 职责 |
 |------|------|------|
 | [`scenes/menu_scene.py`](../scenes/menu_scene.py) | `MenuScene` | 主菜单，发送 `start_game` 事件 |
-| [`scenes/level1.py`](../scenes/level1.py) | `Level1Scene` | 关卡1，问答闯关 |
-| [`scenes/level2.py`](../scenes/level2.py) | `Level2Scene` | 关卡2，宝石+问答 |
+| [`levels/level1/scene.py`](../levels/level1/scene.py) | `Level1Scene` | 关卡1，问答闯关 |
+| [`levels/level2/scene.py`](../levels/level2/scene.py) | `Level2Scene` | 关卡2，宝石+问答 |
 | [`scenes/win_scene.py`](../scenes/win_scene.py) | `WinScene` | 胜利/通关庆祝 |
 
 ---

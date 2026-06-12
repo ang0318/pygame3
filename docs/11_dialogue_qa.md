@@ -48,7 +48,7 @@
 展开题库发生在 `_build_level()` 中：
 
 ```python
-expanded = {k: self.expand_dialogue(v) for k, v in _DIALOGUES.items()}
+expanded = {k: self.expand_dialogue(v) for k, v in DIALOGUES.items()}
 ```
 
 `expand_dialogue()` 是 `BaseLevelScene` 的静态方法，遇到 `question_pool` 就随机抽题并展开为普通题目列表，原列表不变。
@@ -57,8 +57,16 @@ expanded = {k: self.expand_dialogue(v) for k, v in _DIALOGUES.items()}
 
 ## 完整对话示例
 
+对话数据放在关卡自包含目录的 `dialogues.py`，不在场景文件里：
+
+```
+levels/level1/dialogues.py   ← 关卡 1 对话数据
+levels/level2/dialogues.py   ← 关卡 2 对话数据
+```
+
 ```python
-_DIALOGUES = {
+# levels/levelN/dialogues.py
+DIALOGUES: dict[str, list[dict]] = {
     "guide": [
         {"text": "欢迎！我是向导。"},            # 普通对话
         {"text": "跟我学一道题："},              # 普通对话
@@ -82,6 +90,19 @@ _DIALOGUES = {
         {"text": "全部正确！通关！"},
     ],
 }
+```
+
+在场景的 `_build_level()` 中导入并展开：
+
+```python
+from levels.levelN.dialogues import DIALOGUES
+
+def _build_level(self) -> None:
+    expanded = {k: self.expand_dialogue(v) for k, v in DIALOGUES.items()}
+    loader = LevelLoader("levels/levelN/layout.json", self.settings, self.assets, expanded)
+    loader.build(self.platforms, self.npcs)
+    self.player   = loader.player
+    self._world_w = loader.world_w
 ```
 
 ---
@@ -138,7 +159,7 @@ def try_interact(self, player_rect):
 
 ## 在 NPC 完成后触发自定义逻辑
 
-`BaseLevelScene` 在所有 NPC 均 `finished=True` 时自动调用 `_on_all_npc_done()`：
+`BaseLevelScene` 在**所有必须完成的 NPC**（`optional=False`）均 `finished=True` 时自动调用 `_on_all_npc_done()`：
 
 ```python
 def _on_all_npc_done(self) -> None:
@@ -147,3 +168,19 @@ def _on_all_npc_done(self) -> None:
 ```
 
 也可以在这里触发动画、解锁门、播放音效等。
+
+### optional NPC
+
+在 `layout.json` 中为引导类 NPC 添加 `"optional": true`，它的对话完成与否不影响过关判定：
+
+```json
+{
+  "x": 300, "y": 400,
+  "name": "向导",
+  "sprite_key": "guide",
+  "dialogue_key": "guide",
+  "optional": true
+}
+```
+
+省略 `optional` 或写 `false` 则该 NPC 为必须完成项。

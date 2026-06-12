@@ -1,8 +1,7 @@
 """
 NPC 实体 —— 带对话气泡、问答状态机
 素材约定（缺失则自动用色块代替）：
-  assets/npc_{name}_idle_0.png   NPC 静止帧，name 为创建时传入的 sprite_key
-  assets/npc_{name}_talk_0.png   NPC 说话帧（可选，缺失复用 idle）
+  assets/npc.png   所有 NPC 共用同一张图
 建议尺寸 32×48 px。
 """
 from __future__ import annotations
@@ -41,16 +40,12 @@ class NPC(pygame.sprite.Sprite):
         # ── 加载帧 ────────────────────────────────────────────────────────
         if assets:
             fb = settings.COLOR_NPC
-            idle_frames = assets.frames(
-                f"assets/npc_{sprite_key}_idle_{{}}.png", 1, self._size, fb)
-            talk_frames = assets.frames(
-                f"assets/npc_{sprite_key}_talk_{{}}.png", 1, self._size, fb)
+            surf = assets.safe_image("npc.png", self._size, fb)
+            idle_frames = [surf]
         else:
             idle_frames = [self._make_fallback()]
-            talk_frames = [self._make_fallback()]
 
         self._idle_frames = [pygame.transform.scale(f, self._size) for f in idle_frames]
-        self._talk_frames = [pygame.transform.scale(f, self._size) for f in talk_frames]
 
         self._anim_timer = 0.0
         self._anim_fps   = 4.0
@@ -61,6 +56,9 @@ class NPC(pygame.sprite.Sprite):
 
         # 朝向（素材约定面朝右，facing_left=True 时水平翻转）
         self._facing_left = False
+
+        # optional=True 的 NPC 不计入过关条件
+        self.optional  = False
 
         # 对话状态
         self.talking   = False
@@ -82,7 +80,7 @@ class NPC(pygame.sprite.Sprite):
     # ── 更新 ─────────────────────────────────────────────────────────────
     def update(self, dt: float) -> None:  # type: ignore[override]
         self._hint_timer += dt
-        frames = self._talk_frames if self.talking else self._idle_frames
+        frames = self._idle_frames
         if len(frames) > 1:
             self._anim_timer += dt
             if self._anim_timer >= 1.0 / self._anim_fps:

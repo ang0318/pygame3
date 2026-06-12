@@ -59,7 +59,7 @@ player.reset(x, y)   # 重置到指定出生点（速度归零）
 - 玩家靠近（默认 80px 内）时显示闪烁 `[E] 对话` 提示
 - 按 E 键触发对话，按对话列表顺序播放
 - 支持问答题（带选项），回答完毕标记为 `finished`
-- 双帧动画：idle / talking
+- 单套帧动画（idle），无 talking 状态区分
 
 ### 创建
 
@@ -83,8 +83,18 @@ npc = NPC(
 |------|------|
 | `npc.talking` | 当前是否正在对话 |
 | `npc.finished` | 所有对话是否完成 |
+| `npc.optional` | 是否为可选 NPC（不计入过关条件） |
 | `npc.step` | 当前对话步骤索引 |
 | `npc.current_dialogue` | 当前对话条目（dict 或 None） |
+
+### 可选 NPC（optional）
+
+在 layout.json 中标记 `"optional": true`，该 NPC 的对话完成与否**不影响过关判定**。
+适合引导型、剧情型 NPC，无需玩家必须交互。
+
+```json
+{ "x": 200, "y": 400, "name": "向导", "dialogue_key": "guide", "optional": true }
+```
 
 ### 朝向规则
 
@@ -97,10 +107,7 @@ npc = NPC(
 
 | 文件名 | 用途 |
 |--------|------|
-| `npc_{sprite_key}_idle_0.png` | 静止帧（**必须面朝右**） |
-| `npc_{sprite_key}_talk_0.png` | 说话帧（缺失时复用 idle，**必须面朝右**） |
-
-`sprite_key` 预设值：`guide` / `gatekeeper` / `boss` / `default`，可自定义。
+| `npc.png` | 所有 NPC 共用的唯一帧（**必须面朝右**） |
 
 ### 互动距离
 

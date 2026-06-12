@@ -51,7 +51,8 @@
       "y": 409,
       "name": "向导阿明",
       "sprite_key": "guide",
-      "dialogue_key": "guide"
+      "dialogue_key": "guide",
+      "optional": true
     },
     {
       "x": 1300,

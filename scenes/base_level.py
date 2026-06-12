@@ -12,6 +12,7 @@
     C —— 跳过当前问答，强制判定为正确（仅在问答激活时有效）
 """
 from __future__ import annotations
+import math
 import random
 import pygame
 from engine.scene_manager import BaseScene, SceneManager
@@ -176,10 +177,15 @@ class BaseLevelScene(BaseScene):
             npc.update(dt)
 
         target_x = self.player.rect.centerx - self.settings.SCREEN_W // 2
-        self._cam_x += (target_x - self._cam_x) * min(1.0, dt * 8)
+        # 帧率无关的指数平滑：speed=6 时约 0.17 秒追上 90%
+        speed = 6.0
+        t = 1.0 - math.exp(-speed * dt)
+        self._cam_x += (target_x - self._cam_x) * t
         self._cam_x  = max(0, min(self._cam_x, self._world_w - self.settings.SCREEN_W))
 
-        if not self.completed and all(n.finished for n in self.npcs):
+        # 只有"必须完成"的 NPC（optional=False）全部对话完毕才算过关
+        required = [n for n in self.npcs if not getattr(n, "optional", False)]
+        if not self.completed and required and all(n.finished for n in required):
             self.completed = True
             self._on_all_npc_done()
 

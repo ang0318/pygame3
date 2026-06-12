@@ -81,11 +81,13 @@ class LevelLoader:
                 continue
             key      = n.get("dialogue_key", "")
             dialogue = self.dialogue_map.get(key, [{"text": f"（{n['name']} 暂无对话）"}])
-            npcs_out.append(NPC(
+            npc = NPC(
                 n["x"], n["y"],
                 dialogue,
                 cfg,
                 name=n.get("name", "NPC"),
                 sprite_key=n.get("sprite_key", "default"),
                 assets=ast,
-            ))
+            )
+            npc.optional = n.get("optional", False)   # 可选 NPC 不计入过关条件
+            npcs_out.append(npc)

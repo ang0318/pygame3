@@ -12,34 +12,39 @@ pygame3/
 │   ├── scene_manager.py     ← 场景基类 + 栈式场景管理器
 │   ├── asset_loader.py      ← 资源加载器（带缓存 + 三级降级）
 │   ├── level_loader.py      ← JSON 关卡布局加载器
-│   └── level_registry.py   ← 自动扫描 scenes/level*.py 的关卡注册表
+│   └── level_registry.py   ← 自动扫描 levels/levelN/scene.py 的关卡注册表
 │
-├── scenes/                  ← 所有场景
+├── scenes/                  ← 通用场景（非关卡）
 │   ├── base_level.py        ← 关卡基类（物理、摄像机、对话驱动）
-│   ├── level1.py            ← 关卡 1 场景
-│   ├── level2.py            ← 关卡 2 场景（宝石 + Boss）
 │   ├── menu_scene.py        ← 主菜单
 │   └── win_scene.py         ← 通关庆祝页
 │
 ├── entities/                ← 游戏实体
 │   ├── player.py            ← 玩家（移动、跳跃、动画）
-│   ├── npc.py               ← NPC（对话触发、状态机）
+│   ├── npc.py               ← NPC（对话触发、单一帧动画）
 │   └── platform.py          ← 静态平台（碰撞体 + 贴图平铺）
 │
 ├── ui/                      ← UI 组件
 │   ├── dialogue_box.py      ← 对话框（打字机 + 选项高亮）
-│   ├── hud.py               ← 顶部状态栏（分数、关卡名、生命）
+│   ├── hud.py               ← 顶部状态栏（分数、关卡名）
 │   └── music_control.py     ← 右上角音乐控制条
 │
-├── levels/                  ← 关卡布局数据
-│   ├── level1_layout.json
-│   └── level2_layout.json
+├── levels/                  ← 关卡包（每关自包含）
+│   ├── level1/
+│   │   ├── __init__.py
+│   │   ├── scene.py         ← Level1Scene
+│   │   ├── dialogues.py     ← 对话 & 题库数据
+│   │   ├── layout.json      ← 布局（平台/NPC/出生点）
+│   │   └── assets/          ← 关卡专属素材（可选）
+│   └── level2/
+│       ├── __init__.py
+│       ├── scene.py         ← Level2Scene（宝石 + Boss）
+│       ├── dialogues.py
+│       ├── layout.json
+│       └── assets/
 │
-├── assets/                  ← 素材目录
-│   ├── README.md            ← 素材规范说明（指向 docs/08_assets.md）
-│   └── levels/
-│       ├── level1/          ← 关卡 1 专属素材（可选）
-│       └── level2/          ← 关卡 2 专属素材（可选）
+├── assets/                  ← 通用素材目录
+│   └── README.md            ← 素材规范说明（指向 docs/08_assets.md）
 │
 └── docs/                    ← 本文档目录
     ├── 01_quickstart.md
@@ -61,8 +66,8 @@ pygame3/
 |----|-----------|------|
 | 入口 | `main.py` | 初始化 pygame、管理 BGM、绑定事件总线回调 |
 | 引擎 | `engine/` | 无游戏逻辑的通用基础设施 |
-| 场景 | `scenes/` | 每个 `levelN.py` 就是一关，增删不影响其他代码 |
+| 关卡 | `levels/levelN/` | 每关一个自包含目录，增删不影响其他代码 |
 | 实体 | `entities/` | 独立的游戏对象，只依赖 engine |
 | UI | `ui/` | 独立渲染组件，不持有场景引用 |
-| 数据 | `levels/*.json` | 由编辑器生成，手动改也没问题 |
-| 素材 | `assets/` | 图片/音频，缺失时自动降级为色块 |
+| 数据 | `levels/levelN/layout.json` | 由编辑器生成，手动改也没问题 |
+| 素材 | `assets/` 或 `levels/levelN/assets/` | 图片/音频，缺失时自动降级为色块 |
